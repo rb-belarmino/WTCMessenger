@@ -4,7 +4,7 @@ import SwiftUI
 @main
 struct WTCMessengerApp: App {
 	
-	// Variáveis de Estado que controlam a navegação
+	// Variables to control navigation
 	@State private var isAuthenticated = false
 	@State private var userRole = "client"
 	@State private var showLoginAlert = false

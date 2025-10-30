@@ -47,7 +47,7 @@ extension Font {
 	static let wtcCaption = Font.system(size: 12, weight: .medium)
 }
 
-// Modificador para cor de fundo da Navigation Bar (Style)
+// Modifier to set Navigation Bar background color
 struct NavigationBarColorModifier: ViewModifier {
 	var backgroundColor: Color
 	var titleColor: Color

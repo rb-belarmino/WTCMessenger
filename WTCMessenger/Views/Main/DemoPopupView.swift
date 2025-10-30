@@ -6,7 +6,7 @@ struct DemoPopupView: View {
 
 	var body: some View {
 		VStack(spacing: 24) {
-			// Botão para mostrar Alert
+			// Button to show Alert
 			Button("Mostrar Alerta") {
 				showAlert = true
 			}
@@ -16,7 +16,7 @@ struct DemoPopupView: View {
 				Text("Mensagem do alerta.")
 			}
 
-			// Botão para mostrar Sheet
+			// Button to show Sheet
 			Button("Mostrar Sheet") {
 				showSheet = true
 			}

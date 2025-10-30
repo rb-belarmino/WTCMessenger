@@ -47,7 +47,8 @@ struct MainView: View {
 	var body: some View {
 		NavigationView {
 			TabView {
-					// Feed: Conversas
+				
+				// Feed: Messages
 				NavigationStack {
 					List(conversations) { conversation in
 						Button {
@@ -120,7 +121,7 @@ struct MainView: View {
 					Label("Feed", systemImage: "message.fill")
 				}
 				
-					// CRM: Notas com detalhe
+				// CRM: Notes with detail
 				if userRole == "operador" {
 					DemoPopupView()
 						.tabItem {
@@ -189,7 +190,7 @@ struct MainView: View {
 					}
 				}
 				
-					// Perfil
+				//Profile View
 				ProfileView(isAuthenticated: $isAuthenticated, userRole: $userRole)
 					.tabItem {
 						Label("Perfil", systemImage: "person.circle.fill")
