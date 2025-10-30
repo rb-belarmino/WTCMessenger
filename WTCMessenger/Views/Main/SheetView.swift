@@ -1,8 +1,20 @@
-//
-//  SheetView.swift
-//  WTCMessenger
-//
-//  Created by Rodrigo Belarmino de Oliveira on 30/10/25.
-//
+import SwiftUI
 
-import Foundation
+struct SheetView: View {
+	@State private var showSheet = false
+
+	var body: some View {
+		Button("Mostrar Sheet") {
+			showSheet = true
+		}
+		.sheet(isPresented: $showSheet) {
+			VStack {
+				Text("Este é um Sheet!")
+				Button("Fechar") {
+					showSheet = false
+				}
+			}
+			.padding()
+		}
+	}
+}

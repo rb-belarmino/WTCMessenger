@@ -1,8 +1,21 @@
-//
-//  NoteDetailView.swift
-//  WTCMessenger
-//
-//  Created by Rodrigo Belarmino de Oliveira on 30/10/25.
-//
+import SwiftUI
 
-import Foundation
+struct NoteDetailView: View {
+	let note: Note
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 16) {
+			Text("Anotação")
+				.font(.wtcTitle)
+				.foregroundColor(.wtcPrimaryBlue)
+			Text(note.text)
+				.font(.wtcBody)
+			Text("Cliente: \(note.client)")
+				.font(.wtcCaption)
+				.foregroundColor(.gray)
+			Spacer()
+		}
+		.padding()
+		.navigationTitle("Detalhe")
+	}
+}

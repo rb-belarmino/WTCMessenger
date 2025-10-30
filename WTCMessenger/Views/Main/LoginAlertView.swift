@@ -1,8 +1,15 @@
-//
-//  LoginAlertView.swift
-//  WTCMessenger
-//
-//  Created by Rodrigo Belarmino de Oliveira on 30/10/25.
-//
+import SwiftUI
 
-import Foundation
+struct LoginAlertView: View {
+	@Binding var show: Bool
+	var userRole: String
+
+	var body: some View {
+		EmptyView()
+			.alert("Nova mensagem", isPresented: $show) {
+				Button("OK", role: .cancel) { }
+			} message: {
+				Text("Você tem uma nova mensagem!")
+			}
+	}
+}

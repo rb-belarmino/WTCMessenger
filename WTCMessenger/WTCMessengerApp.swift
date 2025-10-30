@@ -1,17 +1,23 @@
-//
-//  WTCMessengerApp.swift
-//  WTCMessenger
-//
-//  Created by Rodrigo Belarmino de Oliveira on 30/10/25.
-//
 
 import SwiftUI
 
 @main
 struct WTCMessengerApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-    }
-}
+	
+	// Variáveis de Estado que controlam a navegação
+	@State private var isAuthenticated = false
+	@State private var userRole = "client"
+	@State private var showLoginAlert = false
+
+	var body: some Scene {
+		WindowGroup {
+			if isAuthenticated {
+				MainView(isAuthenticated: $isAuthenticated, userRole: $userRole, showLoginAlert: $showLoginAlert)
+					
+			} else {
+				LoginView(isAuthenticated: $isAuthenticated, userRole: $userRole, showLoginAlert: $showLoginAlert)
+					
+			}
+			}
+		}
+	}

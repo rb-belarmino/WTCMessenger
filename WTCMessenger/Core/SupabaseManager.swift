@@ -1,8 +1,14 @@
-//
-//  SupabaseManager.swift
-//  WTCMessenger
-//
-//  Created by Rodrigo Belarmino de Oliveira on 30/10/25.
-//
-
+import Supabase
 import Foundation
+
+class SupabaseManager {
+	static let shared = SupabaseManager()
+	let client: SupabaseClient
+
+	private init() {
+		client = SupabaseClient(
+			supabaseURL: URL(string: "https://zdbgrjruxvusiycfrawe.supabase.co")!,
+			supabaseKey: "sb_publishable_oOubZ4ChuHUIhTVVX9v69w_gnFuZGKr"
+		)
+	}
+}

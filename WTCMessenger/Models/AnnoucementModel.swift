@@ -1,8 +1,9 @@
-//
-//  AnnoucementModel.swift
-//  WTCMessenger
-//
-//  Created by Rodrigo Belarmino de Oliveira on 30/10/25.
-//
-
 import Foundation
+
+struct Announcement: Identifiable {
+	let id = UUID()
+	let title: String
+	let message: String
+	let segment: String
+	let date: Date
+}

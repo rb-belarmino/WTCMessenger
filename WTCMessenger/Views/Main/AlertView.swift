@@ -1,8 +1,16 @@
-//
-//  AlertView.swift
-//  WTCMessenger
-//
-//  Created by Rodrigo Belarmino de Oliveira on 30/10/25.
-//
+import SwiftUI
 
-import Foundation
+struct AlertView: View {
+	@State private var showAlert = false
+
+	var body: some View {
+		Button("Mostrar Alerta") {
+			showAlert = true
+		}
+		.alert("Título do Alerta", isPresented: $showAlert) {
+			Button("OK", role: .cancel) { }
+		} message: {
+			Text("Mensagem do alerta.")
+		}
+	}
+}
