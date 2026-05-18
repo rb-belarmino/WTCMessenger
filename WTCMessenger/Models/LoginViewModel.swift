@@ -1,5 +1,4 @@
 import Foundation
-import Supabase
 import Combine
 
 @MainActor
@@ -13,14 +12,14 @@ class LoginViewModel: ObservableObject {
 		isLoading = true
 		defer { isLoading = false }
 		do {
-			_ = try await SupabaseManager.shared.client.auth.signIn(
+			_ = try await NetworkManager.shared.login(
 				email: email,
-				password: password
+				password: Array(password)
 			)
 			errorMessage = nil
 			return true
 		} catch {
-			errorMessage = "Usuário ou senha inválidos."
+			errorMessage = error.localizedDescription
 			return false
 		}
 	}

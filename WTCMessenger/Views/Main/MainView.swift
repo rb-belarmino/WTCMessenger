@@ -1,5 +1,4 @@
 import SwiftUI
-import Supabase
 
 struct Conversation: Identifiable {
 	let id = UUID()
@@ -233,15 +232,11 @@ struct MainView: View {
 	}
 
 	private func logout() {
-		Task {
-			do {
-				try await SupabaseManager.shared.client.auth.signOut()
-				isAuthenticated = false
-				userRole = ""
-			} catch {
-				print("Erro ao fazer logout: \(error.localizedDescription)")
-			}
-		}
+		NetworkManager.shared.accessToken = nil
+		NetworkManager.shared.refreshToken = nil
+		NetworkManager.shared.currentUser = nil
+		isAuthenticated = false
+		userRole = ""
 	}
 }
 
