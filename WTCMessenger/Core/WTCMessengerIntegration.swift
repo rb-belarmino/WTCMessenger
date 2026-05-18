@@ -43,6 +43,43 @@ struct LoginResponse: Codable {
     let role: String
 }
 
+// MARK: - Auxiliares de Tipo Dinâmico
+struct AnyCodable: Codable {
+    let value: Any
+    
+    init(_ value: Any) {
+        self.value = value
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let doubleVal = try? container.decode(Double.self) {
+            self.value = doubleVal
+        } else if let stringVal = try? container.decode(String.self) {
+            self.value = stringVal
+        } else if let boolVal = try? container.decode(Bool.self) {
+            self.value = boolVal
+        } else if let arrayVal = try? container.decode([String].self) {
+            self.value = arrayVal
+        } else {
+            self.value = ""
+        }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        if let doubleVal = value as? Double {
+            try container.encode(doubleVal)
+        } else if let stringVal = value as? String {
+            try container.encode(stringVal)
+        } else if let boolVal = value as? Bool {
+            try container.encode(boolVal)
+        } else if let arrayVal = value as? [String] {
+            try container.encode(arrayVal)
+        }
+    }
+}
+
 struct Customer: Codable, Identifiable {
     let id: String
     let name: String
@@ -52,6 +89,66 @@ struct Customer: Codable, Identifiable {
     let engagementScore: Double
     let status: String
     let segmentId: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, email, phone, tags, engagementScore, status, segmentId, additionalAttributes
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.email = try container.decode(String.self, forKey: .email)
+        self.phone = try container.decode(String.self, forKey: .phone)
+        self.segmentId = try container.decodeIfPresent(String.self, forKey: .segmentId)
+        
+        let additional = try? container.decodeIfPresent([String: AnyCodable].self, forKey: .additionalAttributes)
+        
+        // Decode tags safely
+        if let decodedTags = try container.decodeIfPresent([String].self, forKey: .tags) {
+            self.tags = decodedTags
+        } else if let tagsArray = additional?["tags"]?.value as? [String] {
+            self.tags = tagsArray
+        } else {
+            self.tags = ["Premium", "Fidelidade"]
+        }
+        
+        // Decode engagementScore safely
+        if let decodedScore = try container.decodeIfPresent(Double.self, forKey: .engagementScore) {
+            self.engagementScore = decodedScore
+        } else {
+            var scoreFound: Double? = nil
+            if let scoreVal = additional?["engagementScore"]?.value as? Double {
+                scoreFound = scoreVal
+            } else if let scoreStr = additional?["engagementScore"]?.value as? String, let scoreDouble = Double(scoreStr) {
+                scoreFound = scoreDouble
+            }
+            self.engagementScore = scoreFound ?? 8.5
+        }
+        
+        // Decode status safely
+        if let decodedStatus = try container.decodeIfPresent(String.self, forKey: .status) {
+            self.status = decodedStatus
+        } else {
+            var statusFound: String? = nil
+            if let statusStr = additional?["status"]?.value as? String {
+                statusFound = statusStr
+            }
+            self.status = statusFound ?? "ativo"
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(email, forKey: .email)
+        try container.encode(phone, forKey: .phone)
+        try container.encodeIfPresent(tags, forKey: .tags)
+        try container.encode(engagementScore, forKey: .engagementScore)
+        try container.encode(status, forKey: .status)
+        try container.encodeIfPresent(segmentId, forKey: .segmentId)
+    }
 }
 
 enum MessageStatus: String, Codable {
@@ -63,11 +160,60 @@ enum MessageStatus: String, Codable {
 
 struct Message: Codable, Identifiable {
     let id: String
+    let senderId: String?
     let recipientId: String
     let content: String
     let type: String
     let status: MessageStatus
     let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, senderId, recipientId, content, type, status, createdAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.senderId = try container.decodeIfPresent(String.self, forKey: .senderId)
+        
+        // Decode recipientId safely
+        if let rec = try container.decodeIfPresent(String.self, forKey: .recipientId) {
+            self.recipientId = rec
+        } else {
+            self.recipientId = ""
+        }
+        
+        // Decode content safely
+        if let cont = try container.decodeIfPresent(String.self, forKey: .content) {
+            self.content = cont
+        } else {
+            self.content = ""
+        }
+        
+        // Decode type safely
+        if let ty = try container.decodeIfPresent(String.self, forKey: .type) {
+            self.type = ty
+        } else {
+            self.type = "CHAT"
+        }
+        
+        // Decode status safely
+        if let stat = try container.decodeIfPresent(MessageStatus.self, forKey: .status) {
+            self.status = stat
+        } else {
+            self.status = .sent
+        }
+        
+        // Decode createdAt safely
+        if let created = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+            self.createdAt = created
+        } else {
+            // ISO8601 string padrão caso seja nulo no banco
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            self.createdAt = formatter.string(from: Date())
+        }
+    }
 }
 
 /// Estrutura de Campanha com suporte a modelos ricos de IA gerados pelo Copiloto (Spring AI)
@@ -289,6 +435,32 @@ struct CustomerTimeline: Codable {
         return try handleResponse(data: data, response: response)
     }
     
+    /// Cria um novo cliente no MongoDB Atlas.
+    func createCustomer(name: String, email: String, phone: String, tags: [String] = ["Premium"], engagementScore: Double = 8.5, status: String = "ativo") async throws -> Customer {
+        guard let url = URL(string: "\(messagingBaseURL)/customers") else {
+            throw URLError(.badURL)
+        }
+        
+        let body: [String: Any] = [
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "additionalAttributes": [
+                "tags": tags,
+                "engagementScore": engagementScore,
+                "status": status
+            ]
+        ]
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.allHTTPHeaderFields = defaultHeaders()
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        return try handleResponse(data: data, response: response)
+    }
+    
     /// Busca a timeline 360° unificada de um cliente específico no MongoDB.
     func getCustomerTimeline(customerId: String) async throws -> CustomerTimeline {
         guard let url = URL(string: "\(messagingBaseURL)/customers/\(customerId)/timeline") else {
@@ -422,7 +594,9 @@ struct CustomerTimeline: Codable {
     }
     
     func disconnect() {
-        webSocketTask?.cancel(with: .normalClosure, reason: nil)
+        let task = webSocketTask
+        webSocketTask = nil
+        task?.cancel(with: .normalClosure, reason: nil)
         print("🔌 WebSocket desconectado voluntariamente.")
     }
     
@@ -431,6 +605,17 @@ struct CustomerTimeline: Codable {
         webSocketTask?.receive { [weak self] result in
             switch result {
             case .failure(let error):
+                let nsError = error as NSError
+                // Ignora cancelamentos voluntários (e.g. fechamento de tela) para evitar loop de reconexão
+                if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
+                    return
+                }
+                
+                // Ignora se o socket já foi definido como nulo (desconexão voluntária)
+                guard self?.webSocketTask != nil else {
+                    return
+                }
+                
                 print("❌ Falha ao receber mensagem via WebSocket: \(error.localizedDescription)")
                 // Tenta reconexão em 5 segundos
                 DispatchQueue.global().asyncAfter(deadline: .now() + 5) {

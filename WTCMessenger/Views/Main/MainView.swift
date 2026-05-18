@@ -1,10 +1,19 @@
 import SwiftUI
 
-struct Conversation: Identifiable {
+struct Conversation: Identifiable, Hashable {
 	let id = UUID()
+	let customerId: String?
 	let title: String
 	let isGroup: Bool
 	let messages: [String]
+	
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(id)
+	}
+	
+	static func == (lhs: Conversation, rhs: Conversation) -> Bool {
+		return lhs.id == rhs.id
+	}
 }
 
 struct Note: Identifiable, Hashable {
@@ -23,15 +32,14 @@ struct MainView: View {
 	@State private var showSendMessageSheet = false
 	@State private var recipient = ""
 	@State private var messageText = ""
+	@State private var newCustomerEmail = ""
+	@State private var newCustomerPhone = ""
 	
 	@AppStorage("lastAnnouncementTitle") private var lastAnnouncementTitle: String = ""
 	@AppStorage("lastAnnouncementMessage") private var lastAnnouncementMessage: String = ""
 	@State private var showAnnouncementAlert = false
 	
-	@State private var conversations: [Conversation] = [
-		Conversation(title: "João Silva", isGroup: false, messages: ["Oi!", "Tudo bem?"]),
-		Conversation(title: "Equipe Vendas", isGroup: true, messages: ["Reunião às 10h", "Ok!"])
-	]
+	@State private var conversations: [Conversation] = []
 	@State private var selectedConversation: Conversation?
 	
 	@State private var notes: [Note] = [
@@ -60,6 +68,9 @@ struct MainView: View {
 						}
 					}
 					.navigationTitle("Conversas")
+					.task {
+						await fetchRealConversations()
+					}
 					.toolbar {
 						ToolbarItem(placement: .navigationBarTrailing) {
 							Button(action: {
@@ -76,32 +87,98 @@ struct MainView: View {
 						}
 					}
 					.sheet(isPresented: $showSendMessageSheet) {
-						VStack (spacing: 20){
-							Text("Enviar Mensagem")
+						VStack (spacing: 16){
+							Text("Criar Nova Conversa")
 								.font(.wtcTitle)
 								.foregroundColor(.orange)
-							TextField("Destinatário", text: $recipient)
-								.textFieldStyle(RoundedBorderTextFieldStyle())
-								.font(.wtcBody)
-							TextField("Mensagem", text: $messageText)
-								.textFieldStyle(RoundedBorderTextFieldStyle())
-								.font(.wtcBody)
-							Button("Enviar") {
-								let newConversation = Conversation(title: recipient, isGroup: false, messages: [messageText])
-								conversations.append(newConversation)
-								print("Mensagem para \(recipient): \(messageText)")
-								recipient = ""
-								messageText = ""
-								showSendMessageSheet = false
+								.padding(.bottom, 8)
+							
+							VStack(alignment: .leading, spacing: 6) {
+								Text("Nome do Cliente")
+									.font(.wtcCaption)
+									.foregroundColor(.gray)
+								TextField("Nome completo", text: $recipient)
+									.textFieldStyle(RoundedBorderTextFieldStyle())
+									.font(.wtcBody)
 							}
-							.font(.wtcBody)
+							
+							VStack(alignment: .leading, spacing: 6) {
+								Text("E-mail")
+									.font(.wtcCaption)
+									.foregroundColor(.gray)
+								TextField("exemplo@email.com", text: $newCustomerEmail)
+									.textFieldStyle(RoundedBorderTextFieldStyle())
+									.font(.wtcBody)
+									.autocapitalization(.none)
+									.keyboardType(.emailAddress)
+							}
+							
+							VStack(alignment: .leading, spacing: 6) {
+								Text("Telefone")
+									.font(.wtcCaption)
+									.foregroundColor(.gray)
+								TextField("(11) 99999-9999", text: $newCustomerPhone)
+									.textFieldStyle(RoundedBorderTextFieldStyle())
+									.font(.wtcBody)
+									.keyboardType(.phonePad)
+							}
+							
+							VStack(alignment: .leading, spacing: 6) {
+								Text("Mensagem Inicial")
+									.font(.wtcCaption)
+									.foregroundColor(.gray)
+								TextField("Digite a mensagem...", text: $messageText)
+									.textFieldStyle(RoundedBorderTextFieldStyle())
+									.font(.wtcBody)
+							}
+							.padding(.bottom, 8)
+							
+							Button("Enviar e Cadastrar") {
+								let name = recipient.trimmingCharacters(in: .whitespacesAndNewlines)
+								let email = newCustomerEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+								let phone = newCustomerPhone.trimmingCharacters(in: .whitespacesAndNewlines)
+								let msg = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+								
+								guard !name.isEmpty && !email.isEmpty && !phone.isEmpty && !msg.isEmpty else { return }
+								
+								Task {
+									do {
+										// 1. Cria o cliente no MongoDB via backend
+										let customer = try await NetworkManager.shared.createCustomer(name: name, email: email, phone: phone)
+										
+										// 2. Envia a mensagem inicial via REST/Kafka
+										try await NetworkManager.shared.sendMessage(recipientId: customer.id, content: msg)
+										
+										DispatchQueue.main.async {
+											// 3. Adiciona a conversa na lista local
+											let newConversation = Conversation(customerId: customer.id, title: customer.name, isGroup: false, messages: [msg])
+											conversations.append(newConversation)
+											
+											// Limpa os campos
+											recipient = ""
+											newCustomerEmail = ""
+											newCustomerPhone = ""
+											messageText = ""
+											showSendMessageSheet = false
+										}
+									} catch {
+										print("❌ Erro ao criar cliente e enviar mensagem: \(error.localizedDescription)")
+									}
+								}
+							}
+							.font(.wtcHeadline)
 							.foregroundColor(.white)
 							.padding()
-							.background(Color.orange)
+							.frame(maxWidth: .infinity)
+							.background(recipient.isEmpty || newCustomerEmail.isEmpty || newCustomerPhone.isEmpty || messageText.isEmpty ? Color.gray : Color.orange)
 							.cornerRadius(8)
-							.disabled(recipient.isEmpty || messageText.isEmpty)
+							.disabled(recipient.isEmpty || newCustomerEmail.isEmpty || newCustomerPhone.isEmpty || messageText.isEmpty)
 							
 							Button("Cancelar", role: .cancel) {
+								recipient = ""
+								newCustomerEmail = ""
+								newCustomerPhone = ""
+								messageText = ""
 								showSendMessageSheet = false
 							}
 							.font(.wtcBody)
@@ -238,6 +315,19 @@ struct MainView: View {
 		isAuthenticated = false
 		userRole = ""
 	}
+	
+	private func fetchRealConversations() async {
+		do {
+			let realCustomers = try await NetworkManager.shared.getCustomers()
+			DispatchQueue.main.async {
+				self.conversations = realCustomers.map { customer in
+					Conversation(customerId: customer.id, title: customer.name, isGroup: false, messages: [])
+				}
+			}
+		} catch {
+			print("❌ Erro ao buscar clientes no Feed: \(error.localizedDescription)")
+		}
+	}
 }
 
 struct ChatMessage: Identifiable, Equatable {
@@ -260,9 +350,8 @@ struct ChatView: View {
 	var allMessages: [ChatMessage] {
 		var combined = localMessages
 		
-		// Filter and append WebSocket messages that belong to this chat
 		let filteredWS = webSocketManager.incomingMessages.filter { msg in
-			msg.recipientId == conversation.title || true // Fallback to show all in this direct demo chat
+			msg.recipientId == conversation.customerId || msg.senderId == conversation.customerId
 		}
 		
 		for wsMsg in filteredWS {
@@ -270,7 +359,7 @@ struct ChatView: View {
 				combined.append(ChatMessage(
 					id: wsMsg.id,
 					content: wsMsg.content,
-					isCurrentUser: wsMsg.recipientId == conversation.title,
+					isCurrentUser: wsMsg.recipientId == conversation.customerId,
 					timestamp: "Agora"
 				))
 			}
@@ -390,18 +479,8 @@ struct ChatView: View {
 			.background(Color.white)
 			.shadow(color: .black.opacity(0.05), radius: 5, y: -2)
 		}
-		.onAppear {
-			// Preencher mensagens mock iniciais
-			var initialMsgs: [ChatMessage] = []
-			for (index, msg) in conversation.messages.enumerated() {
-				initialMsgs.append(ChatMessage(
-					id: "mock-\(index)",
-					content: msg,
-					isCurrentUser: index % 2 == 1,
-					timestamp: "Recente"
-				))
-			}
-			self.localMessages = initialMsgs
+		.task {
+			await fetchRealMessages()
 			
 			// Conecta ao WebSocket do Kafka em tempo real
 			WebSocketManager.shared.connect()
@@ -410,6 +489,49 @@ struct ChatView: View {
 			// Desconecta e limpa conexão de forma limpa para evitar memory leaks
 			WebSocketManager.shared.disconnect()
 		}
+	}
+	
+	private func fetchRealMessages() async {
+		guard let customerId = conversation.customerId else { return }
+		isLoading = true
+		do {
+			let timeline = try await NetworkManager.shared.getCustomerTimeline(customerId: customerId)
+			DispatchQueue.main.async {
+				self.localMessages = timeline.recentMessages.map { msg in
+					ChatMessage(
+						id: msg.id,
+						content: msg.content,
+						isCurrentUser: msg.recipientId == customerId,
+						timestamp: formatDate(msg.createdAt)
+					)
+				}.reversed()
+				self.isLoading = false
+			}
+		} catch {
+			print("❌ Erro ao buscar mensagens reais: \(error.localizedDescription)")
+			isLoading = false
+		}
+	}
+	
+	private func formatDate(_ dateString: String) -> String {
+		let inputFormatter = ISO8601DateFormatter()
+		inputFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+		
+		if let date = inputFormatter.date(from: dateString) {
+			let outputFormatter = DateFormatter()
+			outputFormatter.dateFormat = "HH:mm"
+			return outputFormatter.string(from: date)
+		}
+		
+		let simpleFormatter = DateFormatter()
+		simpleFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+		if let date = simpleFormatter.date(from: dateString) {
+			let outputFormatter = DateFormatter()
+			outputFormatter.dateFormat = "HH:mm"
+			return outputFormatter.string(from: date)
+		}
+		
+		return "Recente"
 	}
 	
 	private func sendMessage() {
@@ -425,7 +547,8 @@ struct ChatView: View {
 		
 		Task {
 			do {
-				try await NetworkManager.shared.sendMessage(recipientId: conversation.title, content: text)
+				let targetId = conversation.customerId ?? conversation.title
+				try await NetworkManager.shared.sendMessage(recipientId: targetId, content: text)
 			} catch {
 				print("❌ Erro ao enviar mensagem via REST: \(error.localizedDescription)")
 			}
