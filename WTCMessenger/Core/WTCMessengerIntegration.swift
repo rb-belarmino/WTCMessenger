@@ -38,7 +38,9 @@ struct User: Codable, Identifiable {
 struct LoginResponse: Codable {
     let accessToken: String
     let refreshToken: String
-    let user: User
+    let tokenType: String
+    let expiresIn: Int
+    let role: String
 }
 
 struct Customer: Codable, Identifiable {
@@ -76,12 +78,21 @@ struct CampaignAction: Codable, Identifiable {
 }
 
 struct Campaign: Codable, Identifiable {
-    let id: String
+    private let rawId: String?
     let title: String
     let body: String
     let url: String // Banner/Imagem da Campanha
     let actions: [CampaignAction]
     let actionUrls: [String: String]
+    
+    var id: String {
+        return rawId ?? title
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case rawId = "id"
+        case title, body, url, actions, actionUrls
+    }
 }
 
 struct CustomerTimeline: Codable {
@@ -141,17 +152,26 @@ class NetworkManager: ObservableObject {
         }
         
         if httpResponse.statusCode == 200 {
-            let apiResult = try JSONDecoder().decode(ApiResponse<LoginResponse>.self, from: data)
-            if let loginData = apiResult.data {
-                DispatchQueue.main.async {
-                    self.accessToken = loginData.accessToken
-                    self.refreshToken = loginData.refreshToken
-                    self.currentUser = loginData.user
-                }
-                return loginData.user
-            } else {
-                throw NSError(domain: "WTCMessenger", code: 401, userInfo: [NSLocalizedDescriptionKey: "Falha na estrutura de resposta do login."])
+            // O backend retorna o LoginResponse direto na raiz do JSON, sem ApiResponse wrap
+            let loginData = try JSONDecoder().decode(LoginResponse.self, from: data)
+            
+            // Converte a string role do backend ("OPERATOR") para a enum correspondente no Swift
+            let userRole = UserRole(rawValue: loginData.role.uppercased()) ?? .operatorRole
+            
+            // Constrói o objeto de domínio User localmente com as informações conhecidas
+            let user = User(
+                id: email,
+                name: "Admin Operator",
+                email: email,
+                role: userRole
+            )
+            
+            DispatchQueue.main.async {
+                self.accessToken = loginData.accessToken
+                self.refreshToken = loginData.refreshToken
+                self.currentUser = user
             }
+            return user
         } else {
             // Decodifica a mensagem amigável em português lançada pelo Spring GlobalExceptionHandler
             if let apiError = try? JSONDecoder().decode(ApiErrorPayload.self, from: data) {
@@ -178,12 +198,10 @@ class NetworkManager: ObservableObject {
             throw URLError(.userAuthenticationRequired)
         }
         
-        let apiResult = try JSONDecoder().decode(ApiResponse<LoginResponse>.self, from: data)
-        if let loginData = apiResult.data {
-            DispatchQueue.main.async {
-                self.accessToken = loginData.accessToken
-                self.refreshToken = loginData.refreshToken
-            }
+        let loginData = try JSONDecoder().decode(LoginResponse.self, from: data)
+        DispatchQueue.main.async {
+            self.accessToken = loginData.accessToken
+            self.refreshToken = loginData.refreshToken
         }
     }
     
@@ -251,6 +269,31 @@ class NetworkManager: ObservableObject {
         request.httpMethod = "POST"
         request.allHTTPHeaderFields = defaultHeaders()
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        return try handleResponse(data: data, response: response)
+    }
+    
+    /// ENVIA E DISPARA A CAMPANHA criada/revisada para o Spring Boot & Kafka.
+    func createCampaign(title: String, body: String, urlString: String, actions: [String], actionUrls: [String: String], segmentId: String) async throws -> Campaign {
+        guard let url = URL(string: "\(messagingBaseURL)/campaigns") else {
+            throw URLError(.badURL)
+        }
+        
+        let bodyPayload: [String: Any] = [
+            "title": title,
+            "content": body,
+            "url": urlString,
+            "actions": actions,
+            "actionUrls": actionUrls,
+            "segmentId": segmentId,
+            "recipientIds": ["client-123", "client-456"] // Destinatários fictícios de exemplo
+        ]
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.allHTTPHeaderFields = defaultHeaders()
+        request.httpBody = try JSONSerialization.data(withJSONObject: bodyPayload)
         
         let (data, response) = try await URLSession.shared.data(for: request)
         return try handleResponse(data: data, response: response)

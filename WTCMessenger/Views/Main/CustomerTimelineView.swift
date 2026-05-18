@@ -65,9 +65,12 @@ struct CustomerTimelineView: View {
 							.foregroundColor(.secondary)
 						
 						HStack(spacing: 12) {
-							Label(timeline.customer.phone, systemName: "phone.fill")
-								.font(.wtcCaption)
-								.foregroundColor(.secondary)
+							HStack(spacing: 4) {
+								Image(systemName: "phone.fill")
+								Text(timeline.customer.phone)
+							}
+							.font(.wtcCaption)
+							.foregroundColor(.secondary)
 							
 							Text("•")
 								.foregroundColor(.secondary)
