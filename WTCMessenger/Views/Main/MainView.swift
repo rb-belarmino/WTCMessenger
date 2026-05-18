@@ -346,6 +346,7 @@ struct ChatView: View {
 	@State private var messageText = ""
 	@State private var isLoading = false
 	@State private var localMessages: [ChatMessage] = []
+	@State private var showCustomerTimeline = false
 
 	var allMessages: [ChatMessage] {
 		var combined = localMessages
@@ -396,6 +397,21 @@ struct ChatView: View {
 				}
 				
 				Spacer()
+				
+				if let customerId = conversation.customerId {
+					Button(action: {
+						showCustomerTimeline = true
+					}) {
+						Image(systemName: "info.circle")
+							.font(.title2)
+							.foregroundColor(.white.opacity(0.9))
+					}
+					.sheet(isPresented: $showCustomerTimeline) {
+						NavigationStack {
+							CustomerTimelineView(customerId: customerId)
+						}
+					}
+				}
 				
 				Button(action: {
 					dismiss()

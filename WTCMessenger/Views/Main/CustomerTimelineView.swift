@@ -115,12 +115,67 @@ struct CustomerTimelineView: View {
 					.padding(.horizontal)
 					.padding(.top, 12)
 
-					// 2. Histórico de Mensagens Recentes
+					// 2. Tarefas Pendentes do CRM (Dados do Spring Boot Service)
 					VStack(alignment: .leading, spacing: 12) {
-						Text("Histórico de Mensagens Recentes")
-							.font(.wtcHeadline)
-							.foregroundColor(.wtcPrimaryBlue)
+						HStack {
+							Image(systemName: "checklist")
+								.foregroundColor(.wtcHighlightOrange)
+							Text("Ações Pendentes do Operador")
+								.font(.wtcHeadline)
+								.foregroundColor(.wtcPrimaryBlue)
+						}
+						.padding(.horizontal)
+						
+						if timeline.openTasks.isEmpty {
+							Text("Nenhuma ação operacional pendente para este cliente.")
+								.font(.wtcBody)
+								.foregroundColor(.gray)
+								.padding()
+								.frame(maxWidth: .infinity, alignment: .center)
+								.background(Color.white)
+								.cornerRadius(12)
+								.shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
+								.padding(.horizontal)
+						} else {
+							VStack(spacing: 10) {
+								ForEach(timeline.openTasks, id: \.self) { task in
+									HStack(spacing: 12) {
+										ZStack {
+											Circle()
+												.fill(Color.wtcHighlightOrange.opacity(0.12))
+												.frame(width: 32, height: 32)
+											Image(systemName: "square.and.pencil")
+												.font(.system(size: 14, weight: .bold))
+												.foregroundColor(.wtcHighlightOrange)
+										}
+										
+										Text(task)
+											.font(.wtcBody)
+											.foregroundColor(.wtcDarkGray)
+											.lineLimit(3)
+										
+										Spacer()
+									}
+									.padding(12)
+									.background(Color.white)
+									.cornerRadius(12)
+									.shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
+								}
+							}
 							.padding(.horizontal)
+						}
+					}
+
+					// 3. Histórico de Mensagens Recentes
+					VStack(alignment: .leading, spacing: 12) {
+						HStack {
+							Image(systemName: "message.fill")
+								.foregroundColor(.wtcPrimaryBlue)
+							Text("Histórico de Mensagens Recentes")
+								.font(.wtcHeadline)
+								.foregroundColor(.wtcPrimaryBlue)
+						}
+						.padding(.horizontal)
 						
 						if timeline.recentMessages.isEmpty {
 							Text("Nenhuma mensagem registrada para este cliente.")
@@ -187,7 +242,7 @@ struct CustomerTimelineView: View {
 						}
 					}
 
-					// 3. Campanhas Ativas
+					// 4. Campanhas Ativas
 					VStack(alignment: .leading, spacing: 12) {
 						Text("Campanhas Ativas")
 							.font(.wtcHeadline)
