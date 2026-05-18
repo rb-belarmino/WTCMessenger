@@ -81,17 +81,85 @@ struct Campaign: Codable, Identifiable {
     private let rawId: String?
     let title: String
     let body: String
-    let url: String // Banner/Imagem da Campanha
-    let actions: [CampaignAction]
-    let actionUrls: [String: String]
+    private let rawUrl: String?
+    private let rawActions: [CampaignAction]?
+    private let rawActionUrls: [String: String]?
     
     var id: String {
         return rawId ?? title
     }
     
+    var url: String {
+        return rawUrl ?? "https://via.placeholder.com/600x300"
+    }
+    
+    var actions: [CampaignAction] {
+        return rawActions ?? []
+    }
+    
+    var actionUrls: [String: String] {
+        return rawActionUrls ?? [:]
+    }
+    
     enum CodingKeys: String, CodingKey {
         case rawId = "id"
-        case title, body, url, actions, actionUrls
+        case title
+        case body
+        case rawUrl = "url"
+        case rawActions = "actions"
+        case rawActionUrls = "actionUrls"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.rawId = try container.decodeIfPresent(String.self, forKey: .rawId)
+        self.title = try container.decode(String.self, forKey: .title)
+        
+        // Tenta decodificar de "body", se não achar tenta "content"
+        if let bodyValue = try container.decodeIfPresent(String.self, forKey: .body) {
+            self.body = bodyValue
+        } else {
+            struct DynamicKeys: CodingKey {
+                var stringValue: String
+                var intValue: Int?
+                init?(stringValue: String) { self.stringValue = stringValue }
+                init?(intValue: Int) { return nil }
+            }
+            let dynamicContainer = try decoder.container(keyedBy: DynamicKeys.self)
+            if let contentKey = DynamicKeys(stringValue: "content"),
+               let contentValue = try dynamicContainer.decodeIfPresent(String.self, forKey: contentKey) {
+                self.body = contentValue
+            } else {
+                self.body = try container.decode(String.self, forKey: .body)
+            }
+        }
+        
+        self.rawUrl = try container.decodeIfPresent(String.self, forKey: .rawUrl)
+        
+        // Decodificação super robusta de rawActions: suporta [CampaignAction] e [String]
+        if let actionsArray = try? container.decode([CampaignAction].self, forKey: .rawActions) {
+            self.rawActions = actionsArray
+        } else if let stringsArray = try? container.decode([String].self, forKey: .rawActions) {
+            self.rawActions = stringsArray.map { actionStr in
+                let title = actionStr.contains("confirmar") ? "Confirmar Presença" :
+                            (actionStr.contains("agenda") ? "Ver Agenda" : "Acessar Link")
+                return CampaignAction(action: actionStr, title: title)
+            }
+        } else {
+            self.rawActions = nil
+        }
+        
+        self.rawActionUrls = try container.decodeIfPresent([String: String].self, forKey: .rawActionUrls)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(rawId, forKey: .rawId)
+        try container.encode(title, forKey: .title)
+        try container.encode(body, forKey: .body)
+        try container.encodeIfPresent(rawUrl, forKey: .rawUrl)
+        try container.encodeIfPresent(rawActions, forKey: .rawActions)
+        try container.encodeIfPresent(rawActionUrls, forKey: .rawActionUrls)
     }
 }
 
