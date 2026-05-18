@@ -172,7 +172,7 @@ struct CustomerTimeline: Codable {
 
 // MARK: - Network Manager (REST HTTP Client)
 /// Gerenciador de requisições HTTP REST responsável pela integração com os microsserviços.
-class NetworkManager: ObservableObject {
+@MainActor class NetworkManager: ObservableObject {
     static let shared = NetworkManager()
     
     // ATENÇÃO: DEFINA AQUI O IP DA SUA MÁQUINA CASO RODE EM DISPOSITIVO FÍSICO (Ex: "192.168.1.50")
@@ -391,7 +391,7 @@ class NetworkManager: ObservableObject {
 
 // MARK: - WebSocket Manager (Mensagens em Tempo Real)
 /// Gerenciador de conexões persistentes bidirecionais (WebSockets) para a caixa de entrada em tempo real.
-class WebSocketManager: NSObject, URLSessionWebSocketDelegate, ObservableObject {
+@MainActor class WebSocketManager: NSObject, URLSessionWebSocketDelegate, ObservableObject {
     static let shared = WebSocketManager()
     
     private var webSocketTask: URLSessionWebSocketTask?
@@ -434,18 +434,24 @@ class WebSocketManager: NSObject, URLSessionWebSocketDelegate, ObservableObject 
                 print("❌ Falha ao receber mensagem via WebSocket: \(error.localizedDescription)")
                 // Tenta reconexão em 5 segundos
                 DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
-                    self?.connect()
+                    DispatchQueue.main.async {
+                        self?.connect()
+                    }
                 }
             case .success(let message):
                 switch message {
                 case .string(let text):
-                    self?.handleIncomingText(text)
+                    DispatchQueue.main.async {
+                        self?.handleIncomingText(text)
+                    }
                 case .data(let data):
                     print("Received binary frame of size: \(data.count)")
                 @unknown default:
                     break
                 }
-                self?.listenForMessages() // Mantém o loop de escuta aberto
+                DispatchQueue.main.async {
+                    self?.listenForMessages() // Mantém o loop de escuta aberto
+                }
             }
         }
     }
@@ -454,10 +460,8 @@ class WebSocketManager: NSObject, URLSessionWebSocketDelegate, ObservableObject 
         guard let data = text.data(using: .utf8) else { return }
         do {
             let message = try JSONDecoder().decode(Message.self, from: data)
-            DispatchQueue.main.async {
-                self.incomingMessages.append(message)
-                print("📩 Nova mensagem de chat recebida via WebSocket: \(message.content)")
-            }
+            self.incomingMessages.append(message)
+            print("📩 Nova mensagem de chat recebida via WebSocket: \(message.content)")
         } catch {
             print("❌ Falha ao decodificar frame de WebSocket para objeto Message: \(error)")
         }

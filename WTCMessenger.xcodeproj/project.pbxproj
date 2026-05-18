@@ -6,15 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		5D31818F2EB30CF3004B8658 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 5D31818E2EB30CF3004B8658 /* Auth */; };
-		5D3181912EB30CF3004B8658 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 5D3181902EB30CF3004B8658 /* Functions */; };
-		5D3181932EB30CF3004B8658 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 5D3181922EB30CF3004B8658 /* PostgREST */; };
-		5D3181952EB30CF3004B8658 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 5D3181942EB30CF3004B8658 /* Realtime */; };
-		5D3181972EB30CF3004B8658 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 5D3181962EB30CF3004B8658 /* Storage */; };
-		5D3181992EB30CF3004B8658 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 5D3181982EB30CF3004B8658 /* Supabase */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		5D31817F2EB30C7B004B8658 /* WTCMessenger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WTCMessenger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -45,12 +36,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5D3181932EB30CF3004B8658 /* PostgREST in Frameworks */,
-				5D3181912EB30CF3004B8658 /* Functions in Frameworks */,
-				5D3181992EB30CF3004B8658 /* Supabase in Frameworks */,
-				5D31818F2EB30CF3004B8658 /* Auth in Frameworks */,
-				5D3181972EB30CF3004B8658 /* Storage in Frameworks */,
-				5D3181952EB30CF3004B8658 /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,12 +78,6 @@
 			);
 			name = WTCMessenger;
 			packageProductDependencies = (
-				5D31818E2EB30CF3004B8658 /* Auth */,
-				5D3181902EB30CF3004B8658 /* Functions */,
-				5D3181922EB30CF3004B8658 /* PostgREST */,
-				5D3181942EB30CF3004B8658 /* Realtime */,
-				5D3181962EB30CF3004B8658 /* Storage */,
-				5D3181982EB30CF3004B8658 /* Supabase */,
 			);
 			productName = WTCMessenger;
 			productReference = 5D31817F2EB30C7B004B8658 /* WTCMessenger.app */;
@@ -112,7 +91,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2600;
-				LastUpgradeCheck = 2600;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					5D31817E2EB30C7B004B8658 = {
 						CreatedOnToolsVersion = 26.0.1;
@@ -129,7 +108,6 @@
 			mainGroup = 5D3181762EB30C7B004B8658;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				5D31818D2EB30CF3004B8658 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5D3181802EB30C7B004B8658 /* Products */;
@@ -221,6 +199,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -278,6 +257,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -310,9 +290,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -347,9 +325,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -379,50 +355,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		5D31818D2EB30CF3004B8658 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/supabase/supabase-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.5.1;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		5D31818E2EB30CF3004B8658 /* Auth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5D31818D2EB30CF3004B8658 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Auth;
-		};
-		5D3181902EB30CF3004B8658 /* Functions */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5D31818D2EB30CF3004B8658 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Functions;
-		};
-		5D3181922EB30CF3004B8658 /* PostgREST */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5D31818D2EB30CF3004B8658 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = PostgREST;
-		};
-		5D3181942EB30CF3004B8658 /* Realtime */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5D31818D2EB30CF3004B8658 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Realtime;
-		};
-		5D3181962EB30CF3004B8658 /* Storage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5D31818D2EB30CF3004B8658 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Storage;
-		};
-		5D3181982EB30CF3004B8658 /* Supabase */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5D31818D2EB30CF3004B8658 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Supabase;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 5D3181772EB30C7B004B8658 /* Project object */;
 }
