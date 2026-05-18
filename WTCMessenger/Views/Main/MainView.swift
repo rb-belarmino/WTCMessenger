@@ -584,8 +584,17 @@ struct ChatView: View {
 	}
 	
 	private func sendMessage() {
-		let text = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+		var text = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
 		guard !text.isEmpty else { return }
+		
+		// Detecção de Comandos Rápidos "/" (Diferencial da Sprint 2 - Slide 9)
+		if text.lowercased() == "/promo" {
+			text = "📢 Aproveite nossa promoção exclusiva WTC: Ganhe 20% de desconto na renovação da sua anuidade Gold! Use o cupom WTC20."
+		} else if text.lowercased() == "/boleto" {
+			text = "📄 Segue o boleto da sua mensalidade WTC Business Club: \nLinha digitável: 34191.79001 01043.513184 91020.150008 7 97230000035000\nValor: R$ 350,00 | Vencimento: 25/05/2026."
+		} else if text.lowercased() == "/agradecer" {
+			text = "🙏 Agradecemos imensamente a sua preferência e parceria com o World Trade Center Business Club! É uma honra tê-lo como membro Gold."
+		}
 		
 		messageText = ""
 		
