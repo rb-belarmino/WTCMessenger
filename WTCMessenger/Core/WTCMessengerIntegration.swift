@@ -25,7 +25,7 @@ struct ApiErrorPayload: Codable, LocalizedError {
 // MARK: - Domain Models (Mapeamento do MongoDB)
 enum UserRole: String, Codable {
     case operatorRole = "OPERATOR"
-    case customerRole = "CLIENTE"
+    case customerRole = "CUSTOMER"
 }
 
 struct User: Codable, Identifiable {
@@ -369,13 +369,17 @@ struct CustomerTimeline: Codable {
             // O backend retorna o LoginResponse direto na raiz do JSON, sem ApiResponse wrap
             let loginData = try JSONDecoder().decode(LoginResponse.self, from: data)
             
-            // Converte a string role do backend ("OPERATOR") para a enum correspondente no Swift
-            let userRole = UserRole(rawValue: loginData.role.uppercased()) ?? .operatorRole
+            // Converte a string role do backend ("ROLE_OPERATOR" / "ROLE_CUSTOMER") para a enum correspondente no Swift
+            var normalizedRole = loginData.role.uppercased()
+            if normalizedRole.hasPrefix("ROLE_") {
+                normalizedRole = String(normalizedRole.dropFirst(5))
+            }
+            let userRole = UserRole(rawValue: normalizedRole) ?? .operatorRole
             
             // Constrói o objeto de domínio User localmente com as informações conhecidas
             let user = User(
                 id: email,
-                name: "Admin Operator",
+                name: userRole == .operatorRole ? "Admin Operator" : "Membro WTC Gold",
                 email: email,
                 role: userRole
             )

@@ -342,6 +342,7 @@ struct MainView: View {
 	}
 	
 	private func fetchRealConversations() async {
+		guard userRole == "operador" else { return }
 		do {
 			let realCustomers = try await NetworkManager.shared.getCustomers()
 			DispatchQueue.main.async {
