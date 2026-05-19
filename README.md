@@ -6,6 +6,16 @@ O app é o frontend oficial para a resolução do **Enterprise Challenge FIAP & 
 
 ---
 
+## 📸 Demonstração Visual das Telas Reais
+
+Para ilustrar o acabamento visual premium e as interfaces implementadas, veja as capturas de tela reais do aplicativo rodando no simulador iOS:
+
+| 🔐 1. Tela de Login | 👑 2. Portal do Cliente VIP | 💼 3. Painel do Operador |
+| :---: | :---: | :---: |
+| <img src="media/login.png" width="250" alt="Tela de Login WTC"/> | <img src="media/cliente.png" width="250" alt="WTC Club Lounge VIP"/> | <img src="media/operador.png" width="250" alt="Central do Operador CRM"/> |
+
+---
+
 ## 🌟 Funcionalidades e Telas Principais
 
 O aplicativo opera de forma dinâmica, fornecendo duas interfaces completas com base no perfil do usuário logado:
