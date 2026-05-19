@@ -606,40 +606,37 @@ struct CustomerTimeline: Codable {
     
     /// Escuta os frames de mensagens continuamente (Pipeline Assíncrono do Kafka para o SwiftUI).
     private func listenForMessages() {
-        webSocketTask?.receive { [weak self] result in
-            switch result {
-            case .failure(let error):
-                let nsError = error as NSError
-                // Ignora cancelamentos voluntários (e.g. fechamento de tela) para evitar loop de reconexão
-                if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
-                    return
-                }
-                
-                // Ignora se o socket já foi definido como nulo (desconexão voluntária)
-                guard self?.webSocketTask != nil else {
-                    return
-                }
-                
-                print("❌ Falha ao receber mensagem via WebSocket: \(error.localizedDescription)")
-                // Tenta reconexão em 5 segundos
-                DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
-                    DispatchQueue.main.async {
-                        self?.connect()
+        guard let task = webSocketTask else { return }
+        task.receive { [weak self] result in
+            Task { @MainActor in
+                guard let self = self else { return }
+                switch result {
+                case .failure(let error):
+                    let nsError = error as NSError
+                    // Ignora cancelamentos voluntários (e.g. fechamento de tela) para evitar loop de reconexão
+                    if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
+                        return
                     }
-                }
-            case .success(let message):
-                switch message {
-                case .string(let text):
-                    DispatchQueue.main.async {
-                        self?.handleIncomingText(text)
+                    
+                    // Ignora se o socket já foi definido como nulo (desconexão voluntária)
+                    guard self.webSocketTask != nil else {
+                        return
                     }
-                case .data(let data):
-                    print("Received binary frame of size: \(data.count)")
-                @unknown default:
-                    break
-                }
-                DispatchQueue.main.async {
-                    self?.listenForMessages() // Mantém o loop de escuta aberto
+                    
+                    print("❌ Falha ao receber mensagem via WebSocket: \(error.localizedDescription)")
+                    // Tenta reconexão em 5 segundos
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    self.connect()
+                case .success(let message):
+                    switch message {
+                    case .string(let text):
+                        self.handleIncomingText(text)
+                    case .data(let data):
+                        print("Received binary frame of size: \(data.count)")
+                    @unknown default:
+                        break
+                    }
+                    self.listenForMessages() // Mantém o loop de escuta aberto
                 }
             }
         }
