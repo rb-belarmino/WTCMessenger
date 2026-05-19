@@ -57,7 +57,7 @@ O aplicativo opera de forma dinâmica, fornecendo duas interfaces completas com 
 
 1.  **Xcode 14+** instalado no macOS.
 2.  **Simulador de iOS** ou dispositivo físico conectado.
-3.  **Backend rodando** (`docker compose up --build -d` no repositório do backend) https://github.com/rb-belarmino/WTCMessenger-Backend.
+3.  **Backend rodando** (`docker compose up --build -d` no repositório do backend) [Link do Repositório do Backend](https://github.com/rb-belarmino/WTCMessenger-Backend).
 
 ### ⚙️ Ajuste de Rede para Dispositivo Físico / Simulador
 
